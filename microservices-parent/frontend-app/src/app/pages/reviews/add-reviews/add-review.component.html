@@ -1,0 +1,30 @@
+<form [formGroup]="addReviwForm">
+  <div class="row">
+    <span class="p-float-label">
+      <input id="float-input" type="text" pInputText formControlName="product" />
+      <label for="float-input">product Name</label>
+    </span>
+  </div>
+  <div class="row">
+    <span class="p-float-label">
+      <input
+        id="float-input"
+        type="number"
+        pInputText
+        formControlName="rating"
+      />
+      <label for="float-input">Rating</label>
+    </span>
+  </div>
+  <div class="row">
+    <span class="p-float-label">
+      <input id="float-input" type="text" pInputText formControlName="text" />
+      <label for="float-input">Text</label>
+    </span>
+  </div>
+  <div class="row add-product">
+    <button class="btn btn-fill btn-danger" type="submit" (click)="submit()" [disabled]="addReviwForm.invalid">
+      Submit
+    </button>
+  </div>
+</form>

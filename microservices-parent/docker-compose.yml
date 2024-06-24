@@ -1,0 +1,141 @@
+version: '3.0'
+services:
+  database:
+    image: mysql:5.7
+    container_name: microservices-mysql
+    environment:
+      MYSQL_DATABASE: 'order-service'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'pass'
+      MYSQL_ROOT_PASSWORD: 'root'
+    ports:
+      - '3306:3306'
+
+    volumes:
+      - './.mysql-data/db:/var/lib/mysql'
+    networks:
+      microservices-network:
+
+
+  nosql-db:
+    image: mongo
+    ports:
+      - "27018:27017"
+    container_name: nosql-db
+    volumes:
+      - ./db/:/data/db
+
+  discoveryServer:
+    build: .\discovery-server
+    container_name: "discovery-server"
+    image: eureka
+    ports:
+      - "8761:8761"
+    networks:
+      microservices-network:
+
+
+  configServer:
+    build: .\config-server
+    container_name: "config-server"
+    image: config
+    ports:
+      - "8888:8888"
+    networks:
+      microservices-network:
+
+
+  apiGateway:
+    build: .\api-gateway
+    container_name: "api-gateway"
+    image: gateway
+    ports:
+      - "9090:9090"
+    networks:
+      microservices-network:
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SERVER_PORT=9090
+    depends_on:
+      - discoveryServer
+
+  inventoryService:
+    build: .\inventory-service
+    image: inventoryservice
+    container_name: "inventory-service"
+    ports:
+      - "8081:8081"
+    networks:
+      microservices-network:
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      - apiGateway
+      - discoveryServer
+  customerService:
+    build: .\customer-service
+    container_name: "customer-service"
+    image: customerservice
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    networks:
+      microservices-network:
+    depends_on:
+      - apiGateway
+      - discoveryServer
+
+  orderService:
+    build: .\order-service
+    image: orderservice
+    container_name: "order-service"
+    ports:
+      - "8082:8082"
+    networks:
+      microservices-network:
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      - apiGateway
+      - discoveryServer
+
+  docker-frontend:
+    build: .\frontend-app
+    ports:
+      - '4200:4200'
+    volumes:
+      - ./frontend-app/src:/frontend/src
+  productService:
+    build: .\product-service
+    container_name: "product-service"
+    image: productservice
+    ports:
+      - "8083:8083"
+    networks:
+      microservices-network:
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - TEST_CONFIG=testme
+    depends_on:
+      - apiGateway
+      - discoveryServer
+
+  reviewsService:
+    build: .\reviews-service
+    container_name: "reviews-service"
+    image: reviewsservice
+    ports:
+      - "8001:8001"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    networks:
+      microservices-network:
+    depends_on:
+      - apiGateway
+      - discoveryServer
+volumes:
+  mongo-data:
+networks:
+  microservices-network:
+    driver: bridge
